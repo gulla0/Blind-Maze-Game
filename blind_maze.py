@@ -201,11 +201,11 @@ class BlindMazeGame:
         for (x, y), timer in self.hit_walls.items():
             if timer > 0:
                 s = pygame.Surface((self.cell_size, self.cell_size), pygame.SRCALPHA)
-                s.fill(SUBTLE_GRAY)
+                s.fill(BLACK)
                 self.screen.blit(s, (offset_x + x*self.cell_size, offset_y + y*self.cell_size))
         # Draw marked walls (clear permanent border)
         for (x, y) in self.marked_walls:
-            pygame.draw.rect(self.screen, DARK_GRAY, 
+            pygame.draw.rect(self.screen, BLACK, 
                            (offset_x + x*self.cell_size, offset_y + y*self.cell_size, self.cell_size, self.cell_size), 2)
         # Draw UI (with semi-transparent panel, positioned to avoid clutter)
         ui_width, ui_height = 300, 120
