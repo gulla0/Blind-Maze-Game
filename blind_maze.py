@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+import colorsys
 
 # Initialize Pygame
 pygame.init()
@@ -87,6 +88,7 @@ class BlindMazeGame:
         self.hit_walls = {}  # (x, y) -> flash time remaining
         self.marked_walls = set()  # (x, y) for permanent borders
         self.cell_size = min(self.screen_width // (self.width + 2), self.screen_height // (self.height + 2))
+        self.level_start_time = time.time()
 
     def run(self):
         while True:
@@ -99,9 +101,17 @@ class BlindMazeGame:
 
     def show_start_screen(self):
         self.screen.fill(WHITE)
+        t = time.time()
+        h1 = (t * 0.1) % 1.0
+        h2 = (h1 + 0.2) % 1.0
+        c1 = colorsys.hsv_to_rgb(h1, 0.3, 1.0)
+        c2 = colorsys.hsv_to_rgb(h2, 0.3, 1.0)
         for y in range(self.screen_height):
-            color = (LIGHT_BLUE[0], LIGHT_BLUE[1], LIGHT_BLUE[2], 255 - int(y/self.screen_height * 15))
-            pygame.draw.line(self.screen, color, (0, y), (self.screen_width, y))
+            ratio = y / self.screen_height
+            r = int((c1[0] * (1 - ratio) + c2[0] * ratio) * 255)
+            g = int((c1[1] * (1 - ratio) + c2[1] * ratio) * 255)
+            b = int((c1[2] * (1 - ratio) + c2[2] * ratio) * 255)
+            pygame.draw.line(self.screen, (r, g, b), (0, y), (self.screen_width, y))
         title = self.font.render("Blind Maze Explorer", True, BLACK)
         rules = self.small_font.render("Rules: Use Arrow Keys to Move, Reach GOAL in 30 Seconds, Walls Flash When Hit", True, BLACK)
         play_button = Button(self.screen_width//2 - 100, self.screen_height//2, 200, 50, "Play", (100, 200, 100), (150, 250, 150))
@@ -174,10 +184,18 @@ class BlindMazeGame:
             self.reset_game(self.level)  # Continue to next level
 
     def draw(self):
-        # Gradient background
+        # Animated gradient background
+        t = time.time()
+        h1 = (t * 0.1) % 1.0
+        h2 = (h1 + 0.2) % 1.0
+        c1 = colorsys.hsv_to_rgb(h1, 0.3, 1.0)
+        c2 = colorsys.hsv_to_rgb(h2, 0.3, 1.0)
         for y in range(self.screen_height):
-            color = (LIGHT_BLUE[0], LIGHT_BLUE[1], LIGHT_BLUE[2], 255 - int(y/self.screen_height * 15))
-            pygame.draw.line(self.screen, color, (0, y), (self.screen_width, y))
+            ratio = y / self.screen_height
+            r = int((c1[0] * (1 - ratio) + c2[0] * ratio) * 255)
+            g = int((c1[1] * (1 - ratio) + c2[1] * ratio) * 255)
+            b = int((c1[2] * (1 - ratio) + c2[2] * ratio) * 255)
+            pygame.draw.line(self.screen, (r, g, b), (0, y), (self.screen_width, y))
         # Draw grid outlines
         offset_x, offset_y = (self.screen_width - self.width * self.cell_size) // 2, (self.screen_height - self.height * self.cell_size) // 2
         for y in range(self.height):
@@ -213,19 +231,39 @@ class BlindMazeGame:
         ui_panel = pygame.Surface((ui_width, ui_height), pygame.SRCALPHA)
         ui_panel.fill((200, 200, 200, 50))  # Light gray, 50% opacity
         self.screen.blit(ui_panel, (ui_x, ui_y))
-        timer_text = self.font.render(f"Time: {int(self.game_timer)}", True, BLACK)
+
+        progress = max(0, self.game_timer) / self.time_limit
+        bar_width = int(progress * (ui_width - 40))
+        bar_color = (255 - int(progress * 255), int(progress * 255), 0)
+        pygame.draw.rect(self.screen, bar_color, (ui_x + 20, ui_y + 20, bar_width, 20))
+        pygame.draw.rect(self.screen, BLACK, (ui_x + 20, ui_y + 20, ui_width - 40, 20), 2)
+
+        timer_text = self.font.render(f"{int(self.game_timer)}s", True, BLACK)
         level_text = self.font.render(f"Level: {self.level + 1}", True, BLACK)
         instructions = self.small_font.render("Use Arrow Keys to Move", True, BLACK)
-        self.screen.blit(timer_text, (ui_x + 20, ui_y + 20))
-        self.screen.blit(level_text, (ui_x + 20, ui_y + 60))
-        self.screen.blit(instructions, (ui_x + 20, ui_y + 90))
+        self.screen.blit(timer_text, (ui_x + 20, ui_y + 45))
+        self.screen.blit(level_text, (ui_x + 20, ui_y + 70))
+        self.screen.blit(instructions, (ui_x + 20, ui_y + 95))
+
+        if time.time() - self.level_start_time < 2:
+            overlay = self.font.render(f"Level {self.level + 1}", True, BLACK)
+            self.screen.blit(overlay, (self.screen_width//2 - overlay.get_width()//2,
+                                       self.screen_height//2 - overlay.get_height()//2))
         pygame.display.flip()
 
     def show_end_screen(self):
         self.screen.fill(WHITE)
+        t = time.time()
+        h1 = (t * 0.1) % 1.0
+        h2 = (h1 + 0.2) % 1.0
+        c1 = colorsys.hsv_to_rgb(h1, 0.3, 1.0)
+        c2 = colorsys.hsv_to_rgb(h2, 0.3, 1.0)
         for y in range(self.screen_height):
-            color = (LIGHT_BLUE[0], LIGHT_BLUE[1], LIGHT_BLUE[2], 255 - int(y/self.screen_height * 15))
-            pygame.draw.line(self.screen, color, (0, y), (self.screen_width, y))
+            ratio = y / self.screen_height
+            r = int((c1[0] * (1 - ratio) + c2[0] * ratio) * 255)
+            g = int((c1[1] * (1 - ratio) + c2[1] * ratio) * 255)
+            b = int((c1[2] * (1 - ratio) + c2[2] * ratio) * 255)
+            pygame.draw.line(self.screen, (r, g, b), (0, y), (self.screen_width, y))
         message = self.font.render("Game Over!", True, BLACK)
         score = self.level  # Final score = (final level played - 1), so level 1 gives score 0, level 2 gives score 1, etc.
         score_text = self.font.render(f"Score: {score}", True, BLACK)
